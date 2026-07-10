@@ -11,8 +11,3 @@ tasks = {
 @app.get("/tasks")
 def get_tasks():
     return list(tasks.values())
-
-
-@app.get("/")
-def hello_world():
-    return {"message": "Hello World!"}
