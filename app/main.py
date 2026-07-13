@@ -37,3 +37,13 @@ def create_task(task: TaskCreate):
     tasks[new_id] = new_task
 
     return new_task
+
+
+@app.delete("/tasks/{task_id}")
+def delete_task(task_id: int):
+    removed_task = tasks.pop(task_id, None)
+
+    if removed_task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    return {"message": "Task deleted successfully"}
