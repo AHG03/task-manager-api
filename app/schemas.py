@@ -1,18 +1,32 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, StringConstraints
+from typing import Annotated
 
 
-class TaskCreate(BaseModel):
-    title: str
+class MessageResponse(BaseModel):
+    message: str
 
 
-class TaskUpdate(BaseModel):
-    title: str
+class TaskBase(BaseModel):
+    title: Annotated[str, StringConstraints(
+        strip_whitespace=True, min_length=1)]
+
+
+class TaskCreate(TaskBase):
+    pass
+
+
+class TaskUpdate(TaskBase):
     completed: bool
 
 
-class TaskResponse(BaseModel):
+class TaskResponse(TaskBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    title: str
     completed: bool
+
+
+class TaskPatch(BaseModel):
+    title: Annotated[str | None, StringConstraints(
+        strip_whitespace=True, min_length=1)] = None
+    completed: bool | None = None

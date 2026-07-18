@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends
 from sqlalchemy.orm import Session
 
-from app.schemas import TaskCreate, TaskUpdate, TaskResponse
+from app.schemas import TaskCreate, TaskUpdate, TaskResponse, TaskPatch, MessageResponse
 from app.dependencies import get_db
 from app.models import Task
 
@@ -35,7 +35,7 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
     return new_task
 
 
-@app.delete("/tasks/{task_id}")
+@app.delete("/tasks/{task_id}", response_model=MessageResponse)
 def delete_task(task_id: int, db: Session = Depends(get_db)):
     task = db.query(Task).filter(Task.id == task_id).first()
 
@@ -57,6 +57,22 @@ def update_task(task_id: int, task: TaskUpdate, db: Session = Depends(get_db)):
 
     existing_task.title = task.title
     existing_task.completed = task.completed
+
+    db.commit()
+    db.refresh(existing_task)
+
+    return existing_task
+
+
+@app.patch("/tasks/{task_id}", response_model=TaskResponse)
+def patch_task(task_id: int, task: TaskPatch, db: Session = Depends(get_db)):
+    existing_task = db.query(Task).filter(Task.id == task_id).first()
+
+    if existing_task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    for field, value in task.model_dump(exclude_unset=True).items():
+        setattr(existing_task, field, value)
 
     db.commit()
     db.refresh(existing_task)
