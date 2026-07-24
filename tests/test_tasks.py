@@ -109,3 +109,56 @@ def test_delete_task(client):
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Task not found"
+
+
+def test_get_tasks_with_completed_filter(client):
+    # Create tasks
+    client.post("/tasks", json={"title": "Task 1"})
+    task_2 = client.post("/tasks", json={"title": "Task 2"}).json()
+    client.post("/tasks", json={"title": "Task 3"})
+
+    # Update Task 2 to be completed
+    client.put(
+        f"/tasks/{task_2['id']}",
+        json={"title": "Task 2", "completed": True}
+    )
+
+    # Get tasks with completed=True
+    response = client.get("/tasks?completed=true")
+
+    assert response.status_code == 200
+
+    completed_tasks = response.json()
+
+    assert len(completed_tasks) == 1
+    assert completed_tasks[0]["title"] == "Task 2"
+    assert completed_tasks[0]["completed"] is True
+
+
+def test_get_tasks_with_incomplete_filter(client):
+    # Create tasks
+    client.post("/tasks", json={"title": "Task 1"})
+    task_2 = client.post("/tasks", json={"title": "Task 2"}).json()
+    client.post("/tasks", json={"title": "Task 3"})
+
+    # Update Task 2 to be completed
+    client.put(
+        f"/tasks/{task_2['id']}",
+        json={"title": "Task 2", "completed": True}
+    )
+
+    # Get tasks with completed=False
+    response = client.get("/tasks?completed=false")
+
+    assert response.status_code == 200
+
+    incomplete_tasks = response.json()
+
+    assert len(incomplete_tasks) == 2
+
+    titles = {task["title"] for task in incomplete_tasks}
+
+    assert titles == {"Task 1", "Task 3"}
+
+    for task in incomplete_tasks:
+        assert task["completed"] is False

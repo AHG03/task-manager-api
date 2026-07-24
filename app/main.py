@@ -10,8 +10,13 @@ app = FastAPI()
 
 
 @app.get("/tasks", response_model=list[TaskResponse])
-def get_tasks(db: Session = Depends(get_db)):
-    return db.query(Task).all()
+def get_tasks(completed: bool | None = None, db: Session = Depends(get_db)):
+    query = db.query(Task)
+
+    if completed is not None:
+        query = query.filter(Task.completed == completed)
+
+    return query.all()
 
 
 @app.get("/tasks/{task_id}", response_model=TaskResponse)
