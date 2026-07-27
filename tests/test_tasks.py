@@ -162,3 +162,48 @@ def test_get_tasks_with_incomplete_filter(client):
 
     for task in incomplete_tasks:
         assert task["completed"] is False
+
+
+def test_get_tasks_with_search_filter(client):
+    # Create tasks
+    client.post("/tasks", json={"title": "Buy milk"})
+    client.post("/tasks", json={"title": "Do laundry"})
+    client.post("/tasks", json={"title": "Milk the cow"})
+
+    # Get tasks with search filter
+    response = client.get("/tasks?search=milk")
+    assert response.status_code == 200
+    tasks = response.json()
+
+    assert len(tasks) == 2
+    titles = {task["title"] for task in tasks}
+    assert titles == {"Buy milk", "Milk the cow"}
+
+
+def test_get_tasks_with_search_no_results(client):
+    # Create tasks
+    client.post("/tasks", json={"title": "Buy milk"})
+    client.post("/tasks", json={"title": "Do laundry"})
+    client.post("/tasks", json={"title": "Milk the cow"})
+
+    # Get tasks with search filter that yields no results
+    response = client.get("/tasks?search=eggs")
+    assert response.status_code == 200
+    tasks = response.json()
+    assert len(tasks) == 0
+
+
+def test_get_tasks_with_search_and_completed_filter(client):
+    client.post("/tasks", json={"title": "Buy milk"})
+    client.post("/tasks", json={"title": "Milk the cow"})
+    task = client.post("/tasks", json={"title": "Buy milk tomorrow"}).json()
+    client.put(
+        f"/tasks/{task['id']}", json={"title": "Buy milk tomorrow", "completed": True})
+
+    response = client.get("/tasks?search=milk&completed=true")
+
+    assert response.status_code == 200
+    tasks = response.json()
+    assert len(tasks) == 1
+    assert tasks[0]["title"] == "Buy milk tomorrow"
+    assert tasks[0]["completed"] is True
