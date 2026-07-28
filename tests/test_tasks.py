@@ -207,3 +207,51 @@ def test_get_tasks_with_search_and_completed_filter(client):
     assert len(tasks) == 1
     assert tasks[0]["title"] == "Buy milk tomorrow"
     assert tasks[0]["completed"] is True
+
+
+def test_get_tasks_sort_by_title_ascending(client):
+    client.post("/tasks", json={"title": "Zebra"})
+    client.post("/tasks", json={"title": "Apple"})
+    client.post("/tasks", json={"title": "Monkey"})
+
+    response = client.get("/tasks?sort_by=title")
+
+    assert response.status_code == 200
+
+    tasks = response.json()
+
+    assert tasks[0]["title"] == "Apple"
+    assert tasks[1]["title"] == "Monkey"
+    assert tasks[2]["title"] == "Zebra"
+
+
+def test_get_tasks_sort_by_title_descending(client):
+    client.post("/tasks", json={"title": "Zebra"})
+    client.post("/tasks", json={"title": "Apple"})
+    client.post("/tasks", json={"title": "Monkey"})
+
+    response = client.get(
+        "/tasks?sort_by=title&sort_order=desc"
+    )
+
+    assert response.status_code == 200
+
+    tasks = response.json()
+
+    assert tasks[0]["title"] == "Zebra"
+    assert tasks[1]["title"] == "Monkey"
+    assert tasks[2]["title"] == "Apple"
+
+
+def test_invalid_sort_field(client):
+    response = client.get("/tasks?sort_by=random")
+
+    assert response.status_code == 422
+
+
+def test_invalid_sort_order(client):
+    response = client.get(
+        "/tasks?sort_by=title&sort_order=random"
+    )
+
+    assert response.status_code == 422

@@ -1,17 +1,24 @@
 from fastapi import FastAPI, HTTPException, Depends
 from sqlalchemy.orm import Session
 
-from app.schemas import TaskCreate, TaskUpdate, TaskResponse, TaskPatch, MessageResponse
+from app.schemas import SortField, SortOrder, TaskCreate, TaskUpdate, TaskResponse, TaskPatch, MessageResponse
 from app.dependencies import get_db
 from app.models import Task
 
 
 app = FastAPI()
+SORT_COLUMNS = {
+    SortField.id: Task.id,
+    SortField.title: Task.title,
+    SortField.completed: Task.completed
+}
 
 
 @app.get("/tasks", response_model=list[TaskResponse])
 def get_tasks(search: str | None = None,
               completed: bool | None = None,
+              sort_by: SortField | None = None,
+              sort_order: SortOrder = SortOrder.asc,
               db: Session = Depends(get_db)):
     query = db.query(Task)
 
@@ -20,6 +27,14 @@ def get_tasks(search: str | None = None,
 
     if search is not None:
         query = query.filter(Task.title.contains(search))
+
+    if sort_by is not None:
+        selected_column = SORT_COLUMNS[sort_by]
+
+        if sort_order == SortOrder.desc:
+            query = query.order_by(selected_column.desc())
+        else:
+            query = query.order_by(selected_column.asc())
 
     return query.all()
 

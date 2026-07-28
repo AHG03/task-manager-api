@@ -1,3 +1,4 @@
+from enum import Enum
 from pydantic import BaseModel, ConfigDict, StringConstraints
 from typing import Annotated
 
@@ -30,3 +31,14 @@ class TaskPatch(BaseModel):
     title: Annotated[str | None, StringConstraints(
         strip_whitespace=True, min_length=1)] = None
     completed: bool | None = None
+
+
+class SortField(str, Enum):
+    id = "id"
+    title = "title"
+    completed = "completed"
+
+
+class SortOrder(str, Enum):
+    asc = "asc"
+    desc = "desc"
