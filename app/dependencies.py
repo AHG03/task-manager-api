@@ -1,8 +1,8 @@
-from app.database import sessionLocal
+from app.database import SessionLocal
 
 
 def get_db():
-    db = sessionLocal()
+    db = SessionLocal()
 
     try:
         yield db
