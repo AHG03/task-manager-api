@@ -1,3 +1,8 @@
+def create_sample_tasks(client, count):
+    for i in range(count):
+        client.post("/tasks", json={"title": f"Task {i + 1}"})
+
+
 def test_create_task(client):
     response = client.post(
         "/tasks",
@@ -253,5 +258,45 @@ def test_invalid_sort_order(client):
     response = client.get(
         "/tasks?sort_by=title&sort_order=random"
     )
+
+    assert response.status_code == 422
+
+
+def test_get_tasks_with_limit(client):
+    create_sample_tasks(client, 3)
+
+    response = client.get("/tasks?limit=2")
+
+    assert response.status_code == 200
+
+    tasks = response.json()
+
+    assert len(tasks) == 2
+    assert tasks[0]["title"] == "Task 1"
+    assert tasks[1]["title"] == "Task 2"
+
+
+def test_get_tasks_with_limit_and_offset(client):
+    create_sample_tasks(client, 3)
+
+    response = client.get("/tasks?limit=2&offset=1")
+
+    assert response.status_code == 200
+
+    tasks = response.json()
+
+    assert len(tasks) == 2
+    assert tasks[0]["title"] == "Task 2"
+    assert tasks[1]["title"] == "Task 3"
+
+
+def test_get_tasks_invalid_limit(client):
+    response = client.get("/tasks?limit=0")
+
+    assert response.status_code == 422
+
+
+def test_get_tasks_invalid_offset(client):
+    response = client.get("/tasks?offset=-1")
 
     assert response.status_code == 422

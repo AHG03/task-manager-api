@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_db
@@ -19,6 +19,8 @@ def get_tasks(search: str | None = None,
               completed: bool | None = None,
               sort_by: SortField | None = None,
               sort_order: SortOrder = SortOrder.asc,
+              limit: int | None = Query(None, ge=1),
+              offset: int = Query(0, ge=0),
               db: Session = Depends(get_db)):
     query = db.query(Task)
 
@@ -35,6 +37,10 @@ def get_tasks(search: str | None = None,
             query = query.order_by(selected_column.desc())
         else:
             query = query.order_by(selected_column.asc())
+
+    if limit is not None:
+        query = query.offset(offset)
+        query = query.limit(limit)
 
     return query.all()
 
