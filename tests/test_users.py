@@ -1,3 +1,6 @@
+from app.models import User
+
+
 def test_register_user(client):
     response = client.post(
         "/register",
@@ -66,3 +69,22 @@ def test_register_user_short_password(client):
     )
 
     assert response.status_code == 422
+
+
+def test_register_user_hashes_password(client, db):
+    response = client.post(
+        "/register",
+        json={
+            "username": "testuser",
+            "password": "mypassword123"
+        }
+    )
+
+    assert response.status_code == 200
+
+    user = db.query(User).filter(
+        User.username == "testuser"
+    ).first()
+
+    assert user is not None
+    assert user.hashed_password != "mypassword123"

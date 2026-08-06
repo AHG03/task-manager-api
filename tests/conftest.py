@@ -54,3 +54,13 @@ def client():
     yield TestClient(app)
 
     remove_test_db(TEST_DATABASE_PATH)
+
+
+@pytest.fixture
+def db():
+    db = TestSessionLocal()
+
+    try:
+        yield db
+    finally:
+        db.close()
