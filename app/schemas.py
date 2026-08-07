@@ -44,11 +44,15 @@ class SortOrder(str, Enum):
     desc = "desc"
 
 
-class UserCreate(BaseModel):
+class UserBase(BaseModel):
     username: Annotated[str, StringConstraints(
         strip_whitespace=True, min_length=3)]
     password: Annotated[str, StringConstraints(
         strip_whitespace=True, min_length=8)]
+
+
+class UserCreate(UserBase):
+    pass
 
 
 class UserResponse(BaseModel):
@@ -56,3 +60,11 @@ class UserResponse(BaseModel):
 
     id: int
     username: str
+
+
+class UserLogin(UserBase):
+    pass
+
+
+class LoginResponse(BaseModel):
+    message: str
