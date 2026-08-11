@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.dependencies import get_db
 from app.models import User
 from app.schemas import LoginResponse, UserLogin
-from app.security import verify_password
+from app.security import create_access_token, verify_password
 
 router = APIRouter()
 
@@ -22,4 +22,6 @@ def login_user(user: UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=401, detail="Invalid username or password")
 
-    return {"message": "Login successful"}
+    access_token = create_access_token({"sub": existing_user.username})
+
+    return {"access_token": access_token, "token_type": "bearer"}

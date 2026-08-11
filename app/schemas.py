@@ -67,4 +67,5 @@ class UserLogin(UserBase):
 
 
 class LoginResponse(BaseModel):
-    message: str
+    access_token: str
+    token_type: str = "bearer"
