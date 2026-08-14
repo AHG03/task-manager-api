@@ -1,3 +1,11 @@
+import pytest
+from fastapi import HTTPException
+from fastapi.security import HTTPAuthorizationCredentials
+
+from app.dependencies import get_current_user
+from app.security import create_access_token
+
+
 def test_login_success(client):
     # First, register a user
     register_response = client.post(
@@ -50,3 +58,52 @@ def test_login_nonexistent_user(client):
 
     assert response.status_code == 401
     assert response.json() == {"detail": "Invalid username or password"}
+
+
+def test_get_current_user(client, db):
+    client.post(
+        "/register",
+        json={
+            "username": "testuser",
+            "password": "testpassword"
+        }
+    )
+
+    token = create_access_token({"sub": "testuser"})
+
+    credentials = HTTPAuthorizationCredentials(
+        scheme="Bearer",
+        credentials=token
+    )
+
+    user = get_current_user(credentials, db)
+
+    assert user.username == "testuser"
+
+
+def test_get_current_user_invalid_token(client, db):
+    credentials = HTTPAuthorizationCredentials(
+        scheme="Bearer",
+        credentials="this-is-not-a-valid-token"
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        get_current_user(credentials, db)
+
+    assert exc_info.value.status_code == 401
+    assert exc_info.value.detail == "Could not validate credentials"
+
+
+def test_get_current_user_nonexistent_user(client, db):
+    token = create_access_token({"sub": "doesnotexist"})
+
+    credentials = HTTPAuthorizationCredentials(
+        scheme="Bearer",
+        credentials=token
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        get_current_user(credentials, db)
+
+    assert exc_info.value.status_code == 401
+    assert exc_info.value.detail == "Could not validate credentials"
