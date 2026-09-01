@@ -1,3 +1,4 @@
+from sqlalchemy import ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -11,6 +12,7 @@ class Task(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str]
     completed: Mapped[bool]
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
 
 
 class User(Base):

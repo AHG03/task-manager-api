@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.orm import Session
 
-from app.dependencies import get_db
-from app.models import Task
+from app.dependencies import get_current_user, get_db
+from app.models import Task, User
 from app.schemas import SortField, SortOrder, MessageResponse, TaskResponse, TaskCreate, TaskUpdate, TaskPatch
 
 
@@ -55,9 +55,10 @@ def get_task(task_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/tasks", response_model=TaskResponse)
-def create_task(task: TaskCreate, db: Session = Depends(get_db)):
+def create_task(task: TaskCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
 
-    new_task = Task(title=task.title, completed=False)
+    new_task = Task(title=task.title, completed=False,
+                    owner_id=current_user.id)
 
     db.add(new_task)
     db.commit()

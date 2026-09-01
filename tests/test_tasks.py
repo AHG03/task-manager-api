@@ -1,12 +1,37 @@
-def create_sample_tasks(client, count):
+def get_auth_headers(client):
+    client.post(
+        "/register",
+        json={
+            "username": "testuser",
+            "password": "testpassword"
+        }
+    )
+
+    response = client.post(
+        "/login",
+        json={
+            "username": "testuser",
+            "password": "testpassword"
+        }
+    )
+
+    token = response.json()["access_token"]
+
+    return {"Authorization": f"Bearer {token}"}
+
+
+def create_sample_tasks(client, count, headers):
     for i in range(count):
-        client.post("/tasks", json={"title": f"Task {i + 1}"})
+        client.post("/tasks", json={"title": f"Task {i + 1}"}, headers=headers)
 
 
 def test_create_task(client):
+    headers = get_auth_headers(client)
+
     response = client.post(
         "/tasks",
-        json={"title": "Test Task creation"}
+        json={"title": "Test Task creation"},
+        headers=headers
     )
 
     assert response.status_code == 200
@@ -32,27 +57,36 @@ def test_get_missing_task(client):
 
 
 def test_create_task_empty_title(client):
+    headers = get_auth_headers(client)
+
     response = client.post(
         "/tasks",
-        json={"title": ""}
+        json={"title": ""},
+        headers=headers
     )
 
     assert response.status_code == 422
 
 
 def test_create_task_whitespace_title(client):
+    headers = get_auth_headers(client)
+
     response = client.post(
         "/tasks",
-        json={"title": "     "}
+        json={"title": "     "},
+        headers=headers
     )
 
     assert response.status_code == 422
 
 
 def test_update_task(client):
+    headers = get_auth_headers(client)
+
     response = client.post(
         "/tasks",
-        json={"title": "Original title"}
+        json={"title": "Original title"},
+        headers=headers
     )
 
     task = response.json()
@@ -75,9 +109,12 @@ def test_update_task(client):
 
 
 def test_patch_task(client):
+    headers = get_auth_headers(client)
+
     response = client.post(
         "/tasks",
-        json={"title": "Original title"}
+        json={"title": "Original title"},
+        headers=headers
     )
 
     task = response.json()
@@ -97,9 +134,12 @@ def test_patch_task(client):
 
 
 def test_delete_task(client):
+    headers = get_auth_headers(client)
+
     response = client.post(
         "/tasks",
-        json={"title": "Original task"}
+        json={"title": "Original task"},
+        headers=headers
     )
 
     task = response.json()
@@ -118,9 +158,12 @@ def test_delete_task(client):
 
 def test_get_tasks_with_completed_filter(client):
     # Create tasks
-    client.post("/tasks", json={"title": "Task 1"})
-    task_2 = client.post("/tasks", json={"title": "Task 2"}).json()
-    client.post("/tasks", json={"title": "Task 3"})
+    headers = get_auth_headers(client)
+
+    client.post("/tasks", json={"title": "Task 1"}, headers=headers)
+    task_2 = client.post(
+        "/tasks", json={"title": "Task 2"}, headers=headers).json()
+    client.post("/tasks", json={"title": "Task 3"}, headers=headers)
 
     # Update Task 2 to be completed
     client.put(
@@ -142,9 +185,12 @@ def test_get_tasks_with_completed_filter(client):
 
 def test_get_tasks_with_incomplete_filter(client):
     # Create tasks
-    client.post("/tasks", json={"title": "Task 1"})
-    task_2 = client.post("/tasks", json={"title": "Task 2"}).json()
-    client.post("/tasks", json={"title": "Task 3"})
+    headers = get_auth_headers(client)
+
+    client.post("/tasks", json={"title": "Task 1"}, headers=headers)
+    task_2 = client.post(
+        "/tasks", json={"title": "Task 2"}, headers=headers).json()
+    client.post("/tasks", json={"title": "Task 3"}, headers=headers)
 
     # Update Task 2 to be completed
     client.put(
@@ -171,9 +217,11 @@ def test_get_tasks_with_incomplete_filter(client):
 
 def test_get_tasks_with_search_filter(client):
     # Create tasks
-    client.post("/tasks", json={"title": "Buy milk"})
-    client.post("/tasks", json={"title": "Do laundry"})
-    client.post("/tasks", json={"title": "Milk the cow"})
+    headers = get_auth_headers(client)
+
+    client.post("/tasks", json={"title": "Buy milk"}, headers=headers)
+    client.post("/tasks", json={"title": "Do laundry"}, headers=headers)
+    client.post("/tasks", json={"title": "Milk the cow"}, headers=headers)
 
     # Get tasks with search filter
     response = client.get("/tasks?search=milk")
@@ -199,9 +247,12 @@ def test_get_tasks_with_search_no_results(client):
 
 
 def test_get_tasks_with_search_and_completed_filter(client):
-    client.post("/tasks", json={"title": "Buy milk"})
-    client.post("/tasks", json={"title": "Milk the cow"})
-    task = client.post("/tasks", json={"title": "Buy milk tomorrow"}).json()
+    headers = get_auth_headers(client)
+
+    client.post("/tasks", json={"title": "Buy milk"}, headers=headers)
+    client.post("/tasks", json={"title": "Milk the cow"}, headers=headers)
+    task = client.post(
+        "/tasks", json={"title": "Buy milk tomorrow"}, headers=headers).json()
     client.put(
         f"/tasks/{task['id']}", json={"title": "Buy milk tomorrow", "completed": True})
 
@@ -215,9 +266,11 @@ def test_get_tasks_with_search_and_completed_filter(client):
 
 
 def test_get_tasks_sort_by_title_ascending(client):
-    client.post("/tasks", json={"title": "Zebra"})
-    client.post("/tasks", json={"title": "Apple"})
-    client.post("/tasks", json={"title": "Monkey"})
+    headers = get_auth_headers(client)
+
+    client.post("/tasks", json={"title": "Zebra"}, headers=headers)
+    client.post("/tasks", json={"title": "Apple"}, headers=headers)
+    client.post("/tasks", json={"title": "Monkey"}, headers=headers)
 
     response = client.get("/tasks?sort_by=title")
 
@@ -231,9 +284,11 @@ def test_get_tasks_sort_by_title_ascending(client):
 
 
 def test_get_tasks_sort_by_title_descending(client):
-    client.post("/tasks", json={"title": "Zebra"})
-    client.post("/tasks", json={"title": "Apple"})
-    client.post("/tasks", json={"title": "Monkey"})
+    headers = get_auth_headers(client)
+
+    client.post("/tasks", json={"title": "Zebra"}, headers=headers)
+    client.post("/tasks", json={"title": "Apple"}, headers=headers)
+    client.post("/tasks", json={"title": "Monkey"}, headers=headers)
 
     response = client.get(
         "/tasks?sort_by=title&sort_order=desc"
@@ -263,7 +318,9 @@ def test_invalid_sort_order(client):
 
 
 def test_get_tasks_with_limit(client):
-    create_sample_tasks(client, 3)
+    headers = get_auth_headers(client)
+
+    create_sample_tasks(client, 3, headers)
 
     response = client.get("/tasks?limit=2")
 
@@ -277,7 +334,9 @@ def test_get_tasks_with_limit(client):
 
 
 def test_get_tasks_with_limit_and_offset(client):
-    create_sample_tasks(client, 3)
+    headers = get_auth_headers(client)
+
+    create_sample_tasks(client, 3, headers)
 
     response = client.get("/tasks?limit=2&offset=1")
 

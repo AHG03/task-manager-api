@@ -107,3 +107,38 @@ def test_get_current_user_nonexistent_user(client, db):
 
     assert exc_info.value.status_code == 401
     assert exc_info.value.detail == "Could not validate credentials"
+
+
+def test_get_me(client):
+    register_response = client.post(
+        "/register",
+        json={
+            "username": "testuser",
+            "password": "testpassword"
+        }
+    )
+
+    assert register_response.status_code == 200
+
+    login_response = client.post(
+        "/login",
+        json={
+            "username": "testuser",
+            "password": "testpassword"
+        }
+    )
+
+    assert login_response.status_code == 200
+
+    token = login_response.json()["access_token"]
+
+    response = client.get(
+        "/me",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "id": 1,
+        "username": "testuser"
+    }
