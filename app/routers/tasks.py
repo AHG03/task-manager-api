@@ -21,8 +21,9 @@ def get_tasks(search: str | None = None,
               sort_order: SortOrder = SortOrder.asc,
               limit: int | None = Query(None, ge=1),
               offset: int = Query(0, ge=0),
+              current_user: User = Depends(get_current_user),
               db: Session = Depends(get_db)):
-    query = db.query(Task)
+    query = db.query(Task).filter(Task.owner_id == current_user.id)
 
     if completed is not None:
         query = query.filter(Task.completed == completed)
@@ -46,8 +47,9 @@ def get_tasks(search: str | None = None,
 
 
 @router.get("/tasks/{task_id}", response_model=TaskResponse)
-def get_task(task_id: int, db: Session = Depends(get_db)):
-    task = db.query(Task).filter(Task.id == task_id).first()
+def get_task(task_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    task = db.query(Task).filter(Task.id == task_id,
+                                 Task.owner_id == current_user.id).first()
 
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -68,8 +70,9 @@ def create_task(task: TaskCreate, current_user: User = Depends(get_current_user)
 
 
 @router.delete("/tasks/{task_id}", response_model=MessageResponse)
-def delete_task(task_id: int, db: Session = Depends(get_db)):
-    task = db.query(Task).filter(Task.id == task_id).first()
+def delete_task(task_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    task = db.query(Task).filter(Task.id == task_id,
+                                 Task.owner_id == current_user.id).first()
 
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -81,8 +84,9 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/tasks/{task_id}", response_model=TaskResponse)
-def update_task(task_id: int, task: TaskUpdate, db: Session = Depends(get_db)):
-    existing_task = db.query(Task).filter(Task.id == task_id).first()
+def update_task(task_id: int, task: TaskUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    existing_task = db.query(Task).filter(Task.id == task_id,
+                                          Task.owner_id == current_user.id).first()
 
     if existing_task is None:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -97,8 +101,9 @@ def update_task(task_id: int, task: TaskUpdate, db: Session = Depends(get_db)):
 
 
 @router.patch("/tasks/{task_id}", response_model=TaskResponse)
-def patch_task(task_id: int, task: TaskPatch, db: Session = Depends(get_db)):
-    existing_task = db.query(Task).filter(Task.id == task_id).first()
+def patch_task(task_id: int, task: TaskPatch, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    existing_task = db.query(Task).filter(Task.id == task_id,
+                                          Task.owner_id == current_user.id).first()
 
     if existing_task is None:
         raise HTTPException(status_code=404, detail="Task not found")
